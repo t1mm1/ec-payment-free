@@ -1,0 +1,7 @@
+commerce_payment.commerce_payment_gateway.plugin.ec_payment_free:
+  type: commerce_payment_gateway_configuration
+  label: 'Free Payment configuration'
+  mapping:
+    instructions:
+      type: text_format
+      label: 'Payment instructions'

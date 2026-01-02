@@ -1,0 +1,9 @@
+name: 'EC Payment Free'
+description: 'Free payment gateway for testing - auto-approves all payments'
+package: 'Commerce'
+type: module
+core_version_requirement: ^10 || ^11
+dependencies:
+  - commerce:commerce_payment
+
+version: '1.0.0'

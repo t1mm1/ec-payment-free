@@ -1,0 +1,4 @@
+services:
+  ec_payment_free.helper:
+    class: Drupal\ec_payment_free\Helper
+    arguments: ['@entity_type.manager', '@logger.factory']
