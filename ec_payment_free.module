@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * Contains ec_payment_free.module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_commerce_checkout_pane_info_alter().
+ */
+function ec_payment_free_commerce_checkout_pane_info_alter(&$panes) {
+  // Replace standard payment_information pane with our custom one
+  if (isset($panes['payment_information'])) {
+    $panes['payment_information']['class'] = 'Drupal\ec_payment_free\Plugin\Commerce\CheckoutPane\FreePaymentInformation';
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ec_payment_free_form_commerce_checkout_flow_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Additional validation bypass
+  $form['#validate'][] = 'ec_payment_free_checkout_validate';
+}
+
+/**
+ * Validation handler to clear billing errors for free payment.
+ */
+function ec_payment_free_checkout_validate(&$form, FormStateInterface $form_state) {
+  $payment_method = $form_state->getValue(['payment_information', 'payment_method']);
+
+  // Check if free payment
+  if (!$payment_method ||
+    ($payment_method !== 'free_payment' &&
+      $payment_method !== 'ec_payment_free' &&
+      strpos($payment_method, 'ec_payment_free') === FALSE)) {
+    return;
+  }
+
+  // Clear billing/address/profile validation errors
+  $errors = $form_state->getErrors();
+  if (!empty($errors)) {
+    $form_state->clearErrors();
+
+    foreach ($errors as $field => $error) {
+      if (strpos($field, 'billing') === FALSE &&
+        strpos($field, 'address') === FALSE &&
+        strpos($field, 'profile') === FALSE) {
+        $form_state->setErrorByName($field, $error);
+      }
+    }
+  }
+}

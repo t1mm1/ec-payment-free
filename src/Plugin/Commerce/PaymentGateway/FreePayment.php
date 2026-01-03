@@ -24,6 +24,7 @@ use Symfony\Component\HttpFoundation\Request;
  *   forms = {
  *     "offsite-payment" = "Drupal\ec_payment_free\PluginForm\FreePaymentForm",
  *   },
+ *   collect_billing_information = FALSE,
  * )
  */
 class FreePayment extends OffsitePaymentGatewayBase {
