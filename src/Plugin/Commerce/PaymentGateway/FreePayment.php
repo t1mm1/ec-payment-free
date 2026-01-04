@@ -91,7 +91,6 @@ class FreePayment extends OffsitePaymentGatewayBase {
    */
   public function onReturn(OrderInterface $order, Request $request): void {
     $this->helper->paymentCreate($order, $this->parentEntity->id());
-
     $this->messenger()->addStatus($this->t('Your payment has been processed successfully.'));
   }
 

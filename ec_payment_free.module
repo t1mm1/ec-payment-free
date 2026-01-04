@@ -10,8 +10,7 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Implements hook_commerce_checkout_pane_info_alter().
  */
-function ec_payment_free_commerce_checkout_pane_info_alter(&$panes) {
-  // Replace standard payment_information pane with our custom one
+function ec_payment_free_commerce_checkout_pane_info_alter(&$panes): void {
   if (isset($panes['payment_information'])) {
     $panes['payment_information']['class'] = 'Drupal\ec_payment_free\Plugin\Commerce\CheckoutPane\FreePaymentInformation';
   }
@@ -20,36 +19,36 @@ function ec_payment_free_commerce_checkout_pane_info_alter(&$panes) {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function ec_payment_free_form_commerce_checkout_flow_alter(&$form, FormStateInterface $form_state, $form_id) {
-  // Additional validation bypass
+function ec_payment_free_form_commerce_checkout_flow_alter(&$form, FormStateInterface $form_state, $form_id): void {
   $form['#validate'][] = 'ec_payment_free_checkout_validate';
 }
 
 /**
  * Validation handler to clear billing errors for free payment.
  */
-function ec_payment_free_checkout_validate(&$form, FormStateInterface $form_state) {
-  $payment_method = $form_state->getValue(['payment_information', 'payment_method']);
-
-  // Check if free payment
-  if (!$payment_method ||
-    ($payment_method !== 'free_payment' &&
-      $payment_method !== 'ec_payment_free' &&
-      strpos($payment_method, 'ec_payment_free') === FALSE)) {
+function ec_payment_free_checkout_validate(&$form, FormStateInterface $form_state): void {
+  $payment_helper = \Drupal::service('ec_payment_free.helper');
+  $payment_method_value = $form_state->getValue(['payment_information', 'payment_method']);
+  if (empty($payment_method_value)) {
     return;
   }
 
-  // Clear billing/address/profile validation errors
-  $errors = $form_state->getErrors();
-  if (!empty($errors)) {
-    $form_state->clearErrors();
+  $payment_plugin_id = $payment_helper->getGatewayPaymentPluginId($payment_method_value);
+  if ($payment_helper->isFreePayment($payment_plugin_id)) {
+    return;
+  }
 
-    foreach ($errors as $field => $error) {
-      if (strpos($field, 'billing') === FALSE &&
-        strpos($field, 'address') === FALSE &&
-        strpos($field, 'profile') === FALSE) {
-        $form_state->setErrorByName($field, $error);
-      }
+  // Clear billing/address/profile validation errors.
+  $errors = $form_state->getErrors();
+  if (empty($errors)) {
+    return;
+  }
+
+  $form_state->clearErrors();
+  foreach ($errors as $field => $error) {
+    if (!preg_match('/(billing|address|profile)/', $field)) {
+      $form_state->setErrorByName($field, $error);
     }
   }
+
 }

@@ -22,7 +22,6 @@ class FreePaymentForm extends PaymentOffsiteForm {
       'return' => $form['#return_url'],
       'cancel' => $form['#cancel_url'],
     ];
-
     return $this->buildRedirectForm($form, $form_state, $form['#return_url'], $data, 'get');
   }
 
