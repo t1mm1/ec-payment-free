@@ -28,13 +28,13 @@ function ec_payment_free_form_commerce_checkout_flow_alter(&$form, FormStateInte
  */
 function ec_payment_free_checkout_validate(&$form, FormStateInterface $form_state): void {
   $payment_helper = \Drupal::service('ec_payment_free.helper');
-  $payment_method_value = $form_state->getValue(['payment_information', 'payment_method']);
-  if (empty($payment_method_value)) {
+  $value = $form_state->getValue(['payment_information', 'payment_method']);
+  if (empty($value)) {
     return;
   }
 
-  $payment_plugin_id = $payment_helper->getGatewayPaymentPluginId($payment_method_value);
-  if ($payment_helper->isFreePayment($payment_plugin_id)) {
+  $plugin_id = $payment_helper->getGatewayPaymentPluginId($value);
+  if ($payment_helper->isFreePayment($plugin_id)) {
     return;
   }
 

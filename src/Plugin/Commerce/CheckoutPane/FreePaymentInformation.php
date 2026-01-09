@@ -54,10 +54,10 @@ class FreePaymentInformation extends PaymentInformation {
 
       // We need to hide when ANY free payment option is selected
       if (isset($pane_form['payment_method']['#options'])) {
-        foreach (array_keys($pane_form['payment_method']['#options']) as $payment_method_value) {
-          $payment_plugin_id = $this->helper->getGatewayPaymentPluginId($payment_method_value);
-          if ($this->helper->isFreePayment($payment_plugin_id)) {
-            $states_conditions[] = ['value' => $payment_method_value];
+        foreach (array_keys($pane_form['payment_method']['#options']) as $value) {
+          $plugin_id = $this->helper->getGatewayPaymentPluginId($value);
+          if ($this->helper->isFreePayment($plugin_id)) {
+            $states_conditions[] = ['value' => $value];
           }
         }
       }
@@ -76,8 +76,8 @@ class FreePaymentInformation extends PaymentInformation {
       }
 
       // Get current payment method and set access FALSE for payment free.
-      $payment_plugin_id = $this->helper->getCurrentPaymentPluginId($this->order, $form_state);
-      if ($this->helper->isFreePayment($payment_plugin_id)) {
+      $plugin_id = $this->helper->getCurrentPaymentPluginId($this->order, $pane_form, $form_state);
+      if ($this->helper->isFreePayment($plugin_id)) {
         $pane_form['billing_information']['#access'] = FALSE;
       }
     }
@@ -89,11 +89,11 @@ class FreePaymentInformation extends PaymentInformation {
    * {@inheritdoc}
    */
   public function validatePaneForm(array &$pane_form, FormStateInterface $form_state, array &$complete_form): void {
-    $payment_method_value = $form_state->getValue(['payment_information', 'payment_method']);
+    $value = $form_state->getValue(['payment_information', 'payment_method']);
 
     // Skip validation for free payment.
-    $payment_plugin_id = $this->helper->getGatewayPaymentPluginId($payment_method_value);
-    if ($this->helper->isFreePayment($payment_plugin_id)) {
+    $plugin_id = $this->helper->getGatewayPaymentPluginId($value);
+    if ($this->helper->isFreePayment($plugin_id)) {
       return;
     }
 
@@ -104,11 +104,11 @@ class FreePaymentInformation extends PaymentInformation {
    * {@inheritdoc}
    */
   public function submitPaneForm(array &$pane_form, FormStateInterface $form_state, array &$complete_form): void {
-    $payment_method_value = $form_state->getValue(['payment_information', 'payment_method']);
+    $value = $form_state->getValue(['payment_information', 'payment_method']);
 
     // For free payment: set payment gateway.
-    $payment_plugin_id = $this->helper->getGatewayPaymentPluginId($payment_method_value);
-    if ($this->helper->isFreePayment($payment_plugin_id)) {
+    $plugin_id = $this->helper->getGatewayPaymentPluginId($value);
+    if ($this->helper->isFreePayment($plugin_id)) {
       $payment_gateway = $this->helper->getPaymentGatewayForFreePayment();
       if ($payment_gateway) {
         $this->order->set('payment_gateway', $payment_gateway)->save();

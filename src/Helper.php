@@ -138,53 +138,61 @@ class Helper {
    *
    * @param OrderInterface $order
    *   The order entity.
+   * @param array $pane_form
+   *   Form array.
    * @param FormStateInterface $form_state
    *   Form state.
    *
    * @return string|null
    *   Payment plugin ID or NULL.
    */
-  public function getCurrentPaymentPluginId(OrderInterface $order, FormStateInterface $form_state): ?string {
-    try {
-      // Try form_state value.
-      $payment_method_value = $form_state->getValue(['payment_information', 'payment_method']);
-      if ($payment_method_value) {
-        return $this->getGatewayPaymentPluginId($payment_method_value);
+    public function getCurrentPaymentPluginId(OrderInterface $order, array $pane_form, FormStateInterface $form_state): ?string {
+      try {
+        // Try form_state value.
+        if ($value = $form_state->getValue(['payment_information', 'payment_method'])) {
+          return $this->getGatewayPaymentPluginId($value);
+        }
+
+        // Try user input.
+        if ($value = $form_state->getUserInput()['payment_information']['payment_method'] ?? NULL) {
+          return $this->getGatewayPaymentPluginId($value);
+        }
+
+        // Try order payment_gateway.
+        $plugin_id = $order->get('payment_gateway')->entity?->getPluginId();
+        if ($plugin_id) {
+          return $plugin_id;
+        }
+
+        // Try first payment method from pane_form options.
+        if (!empty($pane_form['payment_method']['#options'])) {
+          $method = array_key_first($pane_form['payment_method']['#options']);
+          return $this->getGatewayPaymentPluginId($method);
+        }
+      }
+      catch (\Exception $e) {
+        $this->logger->error('Error getting current payment gateway plugin ID: @message', [
+          '@message' => $e->getMessage(),
+        ]);
       }
 
-      // Try user input.
-      $user_input = $form_state->getUserInput();
-      if (isset($user_input['payment_information']['payment_method'])) {
-        $payment_method_value = $user_input['payment_information']['payment_method'];
-        return $this->getGatewayPaymentPluginId($payment_method_value);
-      }
-
-      // Try order payment_gateway.
-      return $order->get('payment_gateway')->entity?->getPluginId();
+      return NULL;
     }
-    catch (\Exception $e) {
-      $this->logger->error('Error getting current payment gateway plugin ID: @message', [
-        '@message' => $e->getMessage(),
-      ]);
-    }
-
-    return NULL;
-  }
 
   /**
    * Get payment gateway plugin ID from payment method value.
    *
-   * @param string $payment_method_value
+   * @param string $value
    *   Payment method value (payment gateway ID).
    *
    * @return string|null
    *   Payment gateway plugin ID or NULL.
    */
-  public function getGatewayPaymentPluginId(string $payment_method_value): ?string {
+  public function getGatewayPaymentPluginId(string $value): ?string {
     try {
       return $this->entityTypeManager
         ->getStorage('commerce_payment_gateway')
-        ->load($payment_method_value)
+        ->load($value)
         ?->getPluginId();
     }
     catch (\Exception $e) {
